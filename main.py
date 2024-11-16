@@ -170,11 +170,10 @@ while running:
     # Draw player circles
     for circle in player_circles:
         screen_pos = (int(circle["pos"][0] - main_circle["pos"][0] + SCREEN_WIDTH // 2), int(circle["pos"][1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2))
-        pygame.draw.circle(screen, (0, 125, 225), screen_pos, circle["radius"])
+        pygame.draw.circle(screen, (0, 125, 225), screen_pos, int(circle["radius"]))
     
     # Update the screen
     pygame.display.flip()
     clock.tick(FPS)
 
 pygame.quit()
-
