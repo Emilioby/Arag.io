@@ -39,14 +39,19 @@ food_items = [
 ]
 
 # Bots setup
+bot_names = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa"]
 bot_circles = [
-    {"pos": [random.randint(-MAP_LIMIT, MAP_LIMIT), random.randint(-MAP_LIMIT, MAP_LIMIT)], 
-     "radius": random.randint(20, 40), 
-     "vx": random.uniform(-2, 2), 
-     "vy": random.uniform(-2, 2)} 
-    for _ in range(10)  # Número de bots
+    {
+        "pos": [random.randint(-MAP_LIMIT, MAP_LIMIT), random.randint(-MAP_LIMIT, MAP_LIMIT)], 
+        "radius": random.randint(20, 40), 
+        "vx": random.uniform(-2, 2), 
+        "vy": random.uniform(-2, 2), 
+        "name": bot_names[i], 
+        "color": (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255))  # Color aleatorio para cada bot
+    }
+    for i in range(len(bot_names))
 ]
-
+font = pygame.font.SysFont(None, 24)
 # Clock to control the frame rate
 clock = pygame.time.Clock()
 
@@ -113,30 +118,6 @@ def move_bots():
                 food_items.remove(food)
                 break
 
-def draw_controls(): 
-    font = pygame.font.Font(None, 20) 
-    controls_text = [ 
-        "[W] [A] [S] [D] para moverse", 
-        "[ESPACIO] para separarse", 
-        "[ENTER] para juntarse" 
-    ] 
-    x = SCREEN_WIDTH - 200
-    y = 10 
-    menu_width = 190 
-    menu_height = 100 
-
-    # Draw transparent background 
-    s = pygame.Surface((menu_width, menu_height)) # the size of your rect 
-    s.set_alpha(150) # alpha level 
-    s.fill((0, 0, 0)) # this fills the entire surface 
-    screen.blit(s, (x, y)) 
-    
-    # Draw text 
-    for line in controls_text: 
-        text_surface = font.render(line, True, (255, 255, 255)) 
-        screen.blit(text_surface, (x + 10, y + 10)) 
-        y += 30
-
 # Main game loop
 running = True
 while running:
@@ -150,7 +131,6 @@ while running:
             if event.key == pygame.K_RETURN:
                 fuse_circles()
     
-    # Handle movement
     keys = pygame.key.get_pressed()
     dx, dy = 0, 0
     if keys[pygame.K_w]:
@@ -161,7 +141,7 @@ while running:
         dx -= player_speed
     if keys[pygame.K_d]:
         dx += player_speed
-    
+
     # Move the main circle
     main_circle = player_circles[0]
     move_circle(main_circle, dx, dy)
@@ -188,7 +168,8 @@ while running:
                     player_circles.append(new_circle)
                     circle["last_divide_time"] = current_time
     
-    # Move and apply separation to the following circles
+    
+     # Move and apply separation to the following circles
     for circle in player_circles[1:]:
         # Move towards the main circle but maintain separation
         angle = math.atan2(main_circle["pos"][1] - circle["pos"][1], main_circle["pos"][0] - circle["pos"][0])
@@ -226,18 +207,22 @@ while running:
                 food_items.remove(food)
                 break
     
-    # Draw bots
+      # Draw bots
     for bot in bot_circles:
         bot_screen_pos = [int(bot["pos"][0] - main_circle["pos"][0] + SCREEN_WIDTH // 2),
                           int(bot["pos"][1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2)]
-        pygame.draw.circle(screen, (0, 200, 0), bot_screen_pos, int(bot["radius"]))
+        pygame.draw.circle(screen, bot["color"], bot_screen_pos, int(bot["radius"]))
+        
+        # Draw bot name
+        bot_name_surface = font.render(bot["name"], True, (0, 0, 0))
+        screen.blit(bot_name_surface, (bot_screen_pos[0] - bot_name_surface.get_width() // 2, bot_screen_pos[1] - bot["radius"] - 10))
     
     # Draw player circles
     for circle in player_circles:
         screen_pos = (int(circle["pos"][0] - main_circle["pos"][0] + SCREEN_WIDTH // 2), int(circle["pos"][1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2))
         pygame.draw.circle(screen, (0, 125, 225), screen_pos, int(circle["radius"]))
     
-    # Check collisions between bots and players
+# Check collisions between bots and players
     for bot in bot_circles[:]:
         for circle in player_circles:
             distance = math.sqrt((bot["pos"][0] - circle["pos"][0]) ** 2 + (bot["pos"][1] - circle["pos"][1]) ** 2)
@@ -251,10 +236,7 @@ while running:
                     circle["radius"] += bot["radius"] // 2
                     bot_circles.remove(bot)
                 break
-    
-    #draw controls
-    draw_controls()
-
+            
     # Update the screen
     pygame.display.flip()
     clock.tick(FPS)
