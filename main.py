@@ -1,4 +1,4 @@
-import pygame
+import pygame 
 import random
 import math
 
@@ -36,6 +36,15 @@ food_items = [
         (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     ]
     for _ in range(FOOD_COUNT)
+]
+
+# Bots setup
+bot_circles = [
+    {"pos": [random.randint(-MAP_LIMIT, MAP_LIMIT), random.randint(-MAP_LIMIT, MAP_LIMIT)], 
+     "radius": random.randint(20, 40), 
+     "vx": random.uniform(-2, 2), 
+     "vy": random.uniform(-2, 2)} 
+    for _ in range(10)  # Número de bots
 ]
 
 # Clock to control the frame rate
@@ -80,6 +89,29 @@ def fuse_circles():
     
     new_radius = math.sqrt(total_area / math.pi)
     player_circles[:] = [{"pos": main_circle["pos"], "radius": new_radius, "vx": 0, "vy": 0, "last_divide_time": main_circle["last_divide_time"], "is_main": True}]
+
+def move_bots():
+    for bot in bot_circles:
+        # Movimiento aleatorio
+        bot["vx"] += random.uniform(-0.5, 0.5)
+        bot["vy"] += random.uniform(-0.5, 0.5)
+        limit_speed(bot)
+        bot["pos"][0] += bot["vx"]
+        bot["pos"][1] += bot["vy"]
+        bot["vx"] *= FRICTION
+        bot["vy"] *= FRICTION
+
+        # Asegurarse de que los bots no salgan del mapa
+        bot["pos"][0] = min(max(bot["pos"][0], -MAP_LIMIT), MAP_LIMIT)
+        bot["pos"][1] = min(max(bot["pos"][1], -MAP_LIMIT), MAP_LIMIT)
+
+        # Buscar comida y "comerla"
+        for food in food_items[:]:
+            distance = math.sqrt((bot["pos"][0] - food[0]) ** 2 + (bot["pos"][1] - food[1]) ** 2)
+            if distance < bot["radius"] + FOOD_RADIUS:
+                bot["radius"] += 1
+                food_items.remove(food)
+                break
 
 # Main game loop
 running = True
@@ -154,6 +186,9 @@ while running:
         circle["pos"][0] = min(max(circle["pos"][0], -MAP_LIMIT), MAP_LIMIT)
         circle["pos"][1] = min(max(circle["pos"][1], -MAP_LIMIT), MAP_LIMIT)
     
+    # Move bots
+    move_bots()
+
     # Draw food and handle collisions
     for food in food_items[:]:
         food_screen_pos = [int(food[0] - main_circle["pos"][0] + SCREEN_WIDTH // 2), int(food[1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2)]
@@ -167,10 +202,31 @@ while running:
                 food_items.remove(food)
                 break
     
+    # Draw bots
+    for bot in bot_circles:
+        bot_screen_pos = [int(bot["pos"][0] - main_circle["pos"][0] + SCREEN_WIDTH // 2),
+                          int(bot["pos"][1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2)]
+        pygame.draw.circle(screen, (0, 200, 0), bot_screen_pos, int(bot["radius"]))
+    
     # Draw player circles
     for circle in player_circles:
         screen_pos = (int(circle["pos"][0] - main_circle["pos"][0] + SCREEN_WIDTH // 2), int(circle["pos"][1] - main_circle["pos"][1] + SCREEN_HEIGHT // 2))
         pygame.draw.circle(screen, (0, 125, 225), screen_pos, int(circle["radius"]))
+    
+    # Check collisions between bots and players
+    for bot in bot_circles[:]:
+        for circle in player_circles:
+            distance = math.sqrt((bot["pos"][0] - circle["pos"][0]) ** 2 + (bot["pos"][1] - circle["pos"][1]) ** 2)
+            if distance < bot["radius"] + circle["radius"]:
+                if bot["radius"] > circle["radius"]:  # Bot eats player
+                    bot["radius"] += circle["radius"] // 2
+                    player_circles.remove(circle)
+                    if not player_circles:
+                        running = False  # End game if no player circles remain
+                else:  # Player eats bot
+                    circle["radius"] += bot["radius"] // 2
+                    bot_circles.remove(bot)
+                break
     
     # Update the screen
     pygame.display.flip()
