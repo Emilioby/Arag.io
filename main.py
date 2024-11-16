@@ -113,6 +113,30 @@ def move_bots():
                 food_items.remove(food)
                 break
 
+def draw_controls(): 
+    font = pygame.font.Font(None, 20) 
+    controls_text = [ 
+        "[W] [A] [S] [D] para moverse", 
+        "[ESPACIO] para separarse", 
+        "[ENTER] para juntarse" 
+    ] 
+    x = SCREEN_WIDTH - 200
+    y = 10 
+    menu_width = 190 
+    menu_height = 100 
+
+    # Draw transparent background 
+    s = pygame.Surface((menu_width, menu_height)) # the size of your rect 
+    s.set_alpha(150) # alpha level 
+    s.fill((0, 0, 0)) # this fills the entire surface 
+    screen.blit(s, (x, y)) 
+    
+    # Draw text 
+    for line in controls_text: 
+        text_surface = font.render(line, True, (255, 255, 255)) 
+        screen.blit(text_surface, (x + 10, y + 10)) 
+        y += 30
+
 # Main game loop
 running = True
 while running:
@@ -228,6 +252,9 @@ while running:
                     bot_circles.remove(bot)
                 break
     
+    #draw controls
+    draw_controls()
+
     # Update the screen
     pygame.display.flip()
     clock.tick(FPS)
