@@ -1,4 +1,4 @@
-import pygame 
+import pygame
 import random
 import math
 
@@ -24,10 +24,52 @@ SEPARATION_DISTANCE = 50  # Distancia mínima de separación entre clones
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Arag.io')
 
+# Function to get player name
+def get_player_name():
+    font = pygame.font.SysFont(None, 48)
+    input_box = pygame.Rect(300, 250, 200, 50)
+    color_inactive = pygame.Color('gray')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+    active = False
+    text = ''
+    done = False
+
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Toggle the active variable.
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        return text
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]
+                    else:
+                        text += event.unicode
+
+        screen.fill((30, 30, 30))
+        txt_surface = font.render(text, True, color)
+        width = max(200, txt_surface.get_width() + 10)
+        input_box.w = width
+        screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
+        pygame.draw.rect(screen, color, input_box, 2)
+        pygame.display.flip()
+
+# Get player name before starting the game
+player_name = get_player_name()
+
 # Player setup
 player_circles = [{"pos": [SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2], "radius": PLAYER_INITIAL_RADIUS, "vx": 0, "vy": 0, "last_divide_time": 0, "is_main": True}]
 player_speed = PLAYER_SPEED
-
 # Food setup
 food_items = [
     [
@@ -118,30 +160,6 @@ def move_bots():
                 food_items.remove(food)
                 break
 
-def draw_controls(): 
-    font = pygame.font.Font(None, 20) 
-    controls_text = [ 
-        "[W] [A] [S] [D] para moverse", 
-        "[ESPACIO] para separarse", 
-        "[ENTER] para juntarse" 
-    ] 
-    x = SCREEN_WIDTH - 200
-    y = 10 
-    menu_width = 190 
-    menu_height = 100 
-
-    # Draw transparent background 
-    s = pygame.Surface((menu_width, menu_height)) # the size of your rect 
-    s.set_alpha(150) # alpha level 
-    s.fill((0, 0, 0)) # this fills the entire surface 
-    screen.blit(s, (x, y)) 
-    
-    # Draw text 
-    for line in controls_text: 
-        text_surface = font.render(line, True, (255, 255, 255)) 
-        screen.blit(text_surface, (x + 10, y + 10)) 
-        y += 30
-
 # Main game loop
 running = True
 while running:
@@ -154,6 +172,14 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 fuse_circles()
+     # Draw the player's name above the main circle
+    for circle in player_circles:
+        if circle["is_main"]:
+            screen_pos = (int(circle["pos"][0] - player_circles[0]["pos"][0] + SCREEN_WIDTH // 2), int(circle["pos"][1] - player_circles[0]["pos"][1] + SCREEN_HEIGHT // 2))
+            pygame.draw.circle(screen, (0, 125, 225), screen_pos, int(circle["radius"]))
+            name_surface = font.render(player_name, True, (0, 0, 0))
+            screen.blit(name_surface, (screen_pos[0] - name_surface.get_width() // 2, screen_pos[1] - circle["radius"] - 20))
+                
     
     keys = pygame.key.get_pressed()
     dx, dy = 0, 0
@@ -260,9 +286,6 @@ while running:
                     circle["radius"] += bot["radius"] // 2
                     bot_circles.remove(bot)
                 break
-    
-    #draw controls
-    draw_controls()
 
     # Update the screen
     pygame.display.flip()
